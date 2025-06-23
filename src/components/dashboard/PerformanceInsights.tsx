@@ -1,196 +1,121 @@
-"use client";
+"use client"
 
-import React, { useEffect, useState } from "react";
-import { LineChart } from "@mui/x-charts";
-import axios from "axios";
+import type React from "react"
+import { useEffect, useState } from "react"
+import { Calendar } from "lucide-react"
 
-interface WinTrendData {
-  date: string;
-  wins: number;
-  losses: number;
+interface SimpleAnnouncementsProps {
+  className?: string
 }
 
-interface WinTrendResponse {
-  success: boolean;
-  trend: WinTrendData[];
-  winStreak: number;
-  maxWinStreak: number;
+interface Announcement {
+  id: number
+  title: string
+  description: string
+  icon: any
+  color: string
+  isContest?: boolean
 }
 
-interface PerformanceInsightsProps {
-  className?: string;
-}
+const SimpleAnnouncements: React.FC<SimpleAnnouncementsProps> = ({ className = "" }) => {
+  const [loading, setLoading] = useState(true)
 
-const PerformanceInsights: React.FC<PerformanceInsightsProps> = ({
-  className = "",
-}) => {
-  const [trendData, setTrendData] = useState<WinTrendData[]>([]);
-  const [, setWinStreak] = useState(0);
-  const [, setMaxWinStreak] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [chartWidth, setChartWidth] = useState<number>(0); // Default width
-
-  // const stats = [
-  //   { label: 'Win Streak', value: winStreak },
-  //   { label: 'Max Win Streak', value: maxWinStreak },
-  //   { label: 'Contest Participation', value: trendData.reduce((acc, curr) => acc + curr.wins + curr.losses, 0) },
-  // ];
+  // Simple announcements - manually update these
+  const announcements: Announcement[] = [
+    {
+      id: 1,
+      title: "Next Contest: Weekly Challenge #15",
+      description: "Sunday, 8:00 PM IST • Register now",
+      icon: Calendar,
+      color: "text-cyan-400",
+      isContest: true,
+    }
+  ]
 
   useEffect(() => {
-    const fetchWinTrend = async () => {
-      try {
-        const token = localStorage.getItem("accessToken");
-        const response = await axios.get<WinTrendResponse>(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/user/win-trend`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-
-        if (response.data.success) {
-          setTrendData(response.data.trend);
-          setWinStreak(response.data.winStreak);
-          setMaxWinStreak(response.data.maxWinStreak);
-        }
-      } catch (error) {
-        console.error("Failed to fetch win trend:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWinTrend();
-  }, []);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 1024) {
-        const width = window.innerWidth * 0.7;
-        setChartWidth(width);
-      } else {
-        const width = window.innerWidth * 0.3; // Set to 90% of the window width
-        setChartWidth(width);
-      }
-    };
-
-    handleResize(); // Set initial width
-    window.addEventListener("resize", handleResize); // Update width on resize
-
-    return () => {
-      window.removeEventListener("resize", handleResize); // Cleanup listener
-    };
-  }, []);
+    // Simulate loading
+    const timer = setTimeout(() => setLoading(false), 800)
+    return () => clearTimeout(timer)
+  }, [])
 
   if (loading) {
     return (
-      <div
-        className={`relative bg-gradient-to-br from-[#1a1d26] to-[#1e222c] rounded-lg p-6 ${className}`}
-      >
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold">Performance Insights</h2>
+      <div className={`relative bg-gradient-to-br from-[#1a1d26] to-[#1e222c] rounded-lg p-4 md:p-6 ${className}`}>
+        <div className="flex justify-between items-center mb-4 md:mb-6">
+          <div className="h-6 bg-gray-700 rounded w-40 animate-pulse"></div>
         </div>
-        <div className="h-[220px] flex items-center justify-center">
-          <p className="text-gray-400">Loading performance data...</p>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-16 bg-gray-700 rounded animate-pulse"></div>
+          ))}
         </div>
       </div>
-    );
+    )
   }
 
   return (
     <div
-      className={`relative bg-gradient-to-br from-[#1a1d26] to-[#1e222c] rounded-lg p-6 ${className}`}
+      className={`relative bg-gradient-to-br from-[#1a1d26] to-[#1e222c] rounded-lg p-4 md:p-6 border border-transparent hover:border-white/30 transition-all duration-300 ${className}`}
     >
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-semibold">Performance Insights</h2>
+      <div className="flex justify-between items-center mb-4 md:mb-6">
+        <h2 className="text-lg md:text-xl font-semibold text-white">Announcements</h2>
+        <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
       </div>
 
-      <div className="h-[220px] mb-6 mt-[30%]">
-        <LineChart
-          xAxis={[
-            {
-              data: trendData.map((item) =>
-                item.date.split("/").slice(0, 2).join("/"),
-              ),
-              scaleType: "point",
-              tickLabelStyle: {
-                fill: "#D1D1D1",
-              },
-              tickSize: 0,
-              disableLine: true,
-            },
-          ]}
-          yAxis={[
-            {
-              min: 0,
-              max: 8,
-              tickLabelStyle: {
-                fill: "#D1D1D1",
-              },
-              tickSize: 0,
-              disableLine: true,
-            },
-          ]}
-          series={[
-            {
-              data: trendData.map((item) => item.wins),
-              showMark: true,
-              color: "#C879EB",
-              curve: "linear",
-              valueFormatter: (value: number | null) =>
-                value === null ? "" : value > 0 ? "W" : "L",
-            },
-          ]}
-          width={chartWidth} // Use the measured width
-          height={220}
-          margin={{ top: 20, right: 20, bottom: 30, left: 40 }}
-          disableAxisListener
-          slots={{
-            axisContent: () => (
-              <g>
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <line
-                    key={`h-${i}`}
-                    x1="0"
-                    x2="100%"
-                    y1={`${(i / 7) * 100}%`}
-                    y2={`${(i / 7) * 100}%`}
-                    stroke="rgba(255, 255, 255, 0.1)"
-                    strokeDasharray="3 3"
-                  />
-                ))}
-                {Array.from({ length: 7 }).map((_, i) => (
-                  <line
-                    key={`v-${i}`}
-                    x1={`${(i / 6) * 100}%`}
-                    x2={`${(i / 6) * 100}%`}
-                    y1="0"
-                    y2="100%"
-                    stroke="rgba(255, 255, 255, 0.1)"
-                    strokeDasharray="3 3"
-                  />
-                ))}
-              </g>
-            ),
-          }}
-          sx={{
-            "& .MuiLineElement-root": {
-              strokeWidth: 2,
-              filter: "drop-shadow(0 0 6px rgba(200, 121, 235, 0.6))",
-            },
-            "& .MuiMarkElement-root": {
-              stroke: "#C879EB",
-              fill: "#C879EB",
-              strokeWidth: 2,
-              r: 4,
-              filter: "drop-shadow(0 0 4px rgba(200, 121, 235, 0.6))",
-            },
-          }}
-        />
+      <div className="space-y-3">
+        {announcements.map((announcement, index) => {
+          const IconComponent = announcement.icon
+          return (
+            <div
+              key={announcement.id}
+              className={`flex items-center gap-4 p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-200 hover:scale-[1.01] cursor-pointer ${
+                announcement.isContest ? "border border-cyan-400/40 bg-cyan-400/5" : ""
+              }`}
+              style={{
+                animationDelay: `${index * 100}ms`,
+                animation: "fadeInUp 0.5s ease-out forwards",
+              }}
+            >
+              <div
+                className={`p-2 rounded-lg ${
+                  announcement.isContest ? "bg-cyan-400/20 border border-cyan-400/30" : "bg-white/10"
+                } flex-shrink-0`}
+              >
+                <IconComponent className={`w-5 h-5 ${announcement.color}`} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className={`font-semibold text-base ${announcement.color} leading-tight`}>{announcement.title}</h3>
+                <p className="text-white/70 text-sm mt-1">{announcement.description}</p>
+              </div>
+              {announcement.isContest && (
+                <div className="flex-shrink-0">
+                  <div className="w-3 h-3 bg-cyan-400 rounded-full animate-pulse"></div>
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
+
+      {/* Footer */}
+      <div className="mt-6 pt-4 border-t border-white/10 text-center">
+        <span className="text-white/40 text-xs font-mono">Last updated: 2:42 PM</span>
+      </div>
+
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
-  );
-};
+  )
+}
 
-export default PerformanceInsights;
+export default SimpleAnnouncements
